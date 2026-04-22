@@ -1,0 +1,130 @@
+buildscript {
+    ext.kotlin_version = '1.8.22'
+    repositories {
+        maven { url = 'https://maven.minecraftforge.net' }
+        maven { url = 'https://repo.spongepowered.org/maven' }
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT'
+        classpath 'org.spongepowered:mixingradle:0.6-SNAPSHOT'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+
+apply plugin: 'net.minecraftforge.gradle.forge'
+apply plugin: 'org.spongepowered.mixin'
+apply plugin: 'kotlin'
+
+version = "0.3B-10mq29"
+group = "dev.wizard"
+archivesBaseName = "meta"
+
+sourceCompatibility = targetCompatibility = '1.8'
+compileJava {
+    sourceCompatibility = targetCompatibility = '1.8'
+}
+
+compileKotlin {
+    kotlinOptions {
+        jvmTarget = "1.8"
+        freeCompilerArgs = ["-Xjvm-default=all"]
+    }
+}
+
+minecraft {
+    version = "1.12.2-14.23.5.2860"
+    runDir = "run"
+    mappings = "stable_39"
+    
+    coreMod = "dev.wizard.meta.MetaCoreMod"
+    
+    clientJvmArgs = [
+        "-Dfml.coreMods.load=dev.wizard.meta.MetaCoreMod",
+        "-Dmixin.env.disableRefMap=true"
+    ]
+}
+
+repositories {
+    mavenCentral()
+    maven { url = 'https://repo.spongepowered.org/maven' }
+    maven { url = 'https://jitpack.io' }
+    maven { url = 'https://maven.minecraftforge.net' }
+}
+
+configurations {
+    embed
+    implementation.extendsFrom(embed)
+}
+
+dependencies {
+    // Kotlin
+    embed "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+    embed "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+    embed "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
+    embed "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3"
+    
+    // Mixin
+    embed('org.spongepowered:mixin:0.7.11-SNAPSHOT') {
+        exclude module: 'launchwrapper'
+        exclude module: 'guava'
+        exclude module: 'gson'
+        exclude module: 'commons-io'
+    }
+    
+    // FastUtil
+    embed 'it.unimi.dsi:fastutil:8.5.12'
+    
+    // Gson
+    embed 'com.google.code.gson:gson:2.10.1'
+    
+    // Baritone (if needed)
+    // embed 'com.github.cabaletta:baritone:1.2.14'
+}
+
+mixin {
+    defaultObfuscationEnv searge
+    add sourceSets.main, "mixins.meta.refmap.json"
+}
+
+jar {
+    manifest {
+        attributes(
+            'FMLCorePlugin': 'dev.wizard.meta.MetaCoreMod',
+            'FMLCorePluginContainsFMLMod': 'true',
+            'ForceLoadAsMod': 'true',
+            'TweakClass': 'org.spongepowered.asm.launch.MixinTweaker',
+            'TweakOrder': '0',
+            'MixinConfigs': 'mixins.meta.core.json,mixins.meta.accessor.json,mixins.meta.patch.json,mixins.baritone.json'
+        )
+    }
+    
+    from {
+        configurations.embed.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    
+    exclude 'META-INF/*.RSA', 'META-INF/*.SF', 'META-INF/*.DSA'
+}
+
+processResources {
+    inputs.property "version", project.version
+    inputs.property "mcversion", project.minecraft.version
+
+    from(sourceSets.main.resources.srcDirs) {
+        include 'mcmod.info'
+        expand 'version': project.version, 'mcversion': project.minecraft.version
+    }
+
+    from(sourceSets.main.resources.srcDirs) {
+        exclude 'mcmod.info'
+    }
+}
+
+task sourcesJar(type: Jar, dependsOn: classes) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+artifacts {
+    archives sourcesJar
+}

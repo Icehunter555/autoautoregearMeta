@@ -1,0 +1,9 @@
+{
+  "required": true,
+  "minVersion": "0.7",
+  "package": "dev.wizard.meta.mixins.core",
+  "refmap": "mixins.meta.refmap.json",
+  "target": "@env(DEFAULT)",
+  "compatibilityLevel": "JAVA_8",
+  "mixins": []
+}

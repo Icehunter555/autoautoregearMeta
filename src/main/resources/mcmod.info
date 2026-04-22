@@ -1,0 +1,16 @@
+[
+  {
+    "modid": "meta",
+    "name": "Meta",
+    "description": "A Minecraft utility mod",
+    "version": "${version}",
+    "mcversion": "${mcversion}",
+    "url": "",
+    "updateUrl": "",
+    "authorList": ["wizard"],
+    "credits": "",
+    "logoFile": "",
+    "screenshots": [],
+    "dependencies": []
+  }
+]
