@@ -1,0 +1,73 @@
+package dev.wizard.meta.module.modules.misc
+
+import dev.fastmc.common.TickTimer
+import dev.wizard.meta.event.ListenerKt.listener
+import dev.wizard.meta.event.events.RunGameLoopEvent
+import dev.wizard.meta.module.Category
+import dev.wizard.meta.module.Module
+import dev.wizard.meta.util.interfaces.DisplayEnum
+import net.minecraft.entity.player.EnumPlayerModelParts
+import java.util.EnumSet
+
+object SkinBlinker : Module(
+    name = "SkinBlinker",
+    category = Category.MISC,
+    description = "your either wizard or a copycat"
+) {
+    private val cape = setting("Cape", false)
+    private val jacket = setting("Jacket", true)
+    private val leftSleeve = setting("Left Sleeve", true)
+    private val rightSleeve = setting("Right Sleeve", true)
+    private val leftPantsLeg = setting("Left Pants Leg", true)
+    private val rightPantsLeg = setting("Right Pants Leg", true)
+    private val hat = setting("Hat", true)
+    private val mode = setting("Mode", FlickerMode.HORIZONTAL)
+    private val delay = setting("Delay", 10, 0..500, 5, description = "Skin layer toggle delay, in milliseconds")
+
+    private val enabledParts = EnumSet.of(EnumPlayerModelParts.JACKET, EnumPlayerModelParts.LEFT_SLEEVE, EnumPlayerModelParts.RIGHT_SLEEVE, EnumPlayerModelParts.LEFT_PANTS_LEG, EnumPlayerModelParts.RIGHT_PANTS_LEG, EnumPlayerModelParts.HAT)
+    private val horizontalParts = arrayOf(EnumPlayerModelParts.LEFT_SLEEVE, EnumPlayerModelParts.LEFT_PANTS_LEG, EnumPlayerModelParts.JACKET, EnumPlayerModelParts.HAT, EnumPlayerModelParts.CAPE, EnumPlayerModelParts.RIGHT_PANTS_LEG, EnumPlayerModelParts.RIGHT_SLEEVE)
+    private val verticalParts = arrayOf(EnumPlayerModelParts.HAT, EnumPlayerModelParts.JACKET, EnumPlayerModelParts.CAPE, EnumPlayerModelParts.LEFT_SLEEVE, EnumPlayerModelParts.RIGHT_SLEEVE, EnumPlayerModelParts.LEFT_PANTS_LEG, EnumPlayerModelParts.RIGHT_PANTS_LEG)
+    private val timer = TickTimer()
+    private var lastIndex = 0
+
+    override fun getHudInfo(): String {
+        return mode.value.displayName.toString()
+    }
+
+    init {
+        listener<RunGameLoopEvent.Tick> {
+            if (!timer.tickAndReset(delay.value.toLong())) return@listener
+
+            val part = when (mode.value) {
+                FlickerMode.RANDOM -> EnumPlayerModelParts.values().random()
+                FlickerMode.VERTICAL -> verticalParts[lastIndex]
+                FlickerMode.HORIZONTAL -> horizontalParts[lastIndex]
+            }
+
+            if (enabledParts.contains(part)) {
+                mc.gameSettings.switchModelPartEnabled(part)
+            }
+            lastIndex = (lastIndex + 1) % 7
+        }
+
+        onDisable {
+            for (model in EnumPlayerModelParts.values()) {
+                mc.gameSettings.setModelPartEnabled(model, true)
+            }
+        }
+
+        cape.listeners.add { if (cape.value) enabledParts.add(EnumPlayerModelParts.CAPE) else enabledParts.remove(EnumPlayerModelParts.CAPE) }
+        jacket.listeners.add { if (jacket.value) enabledParts.add(EnumPlayerModelParts.JACKET) else enabledParts.remove(EnumPlayerModelParts.JACKET) }
+        leftSleeve.listeners.add { if (leftSleeve.value) enabledParts.add(EnumPlayerModelParts.LEFT_SLEEVE) else enabledParts.remove(EnumPlayerModelParts.LEFT_SLEEVE) }
+        rightSleeve.listeners.add { if (rightSleeve.value) enabledParts.add(EnumPlayerModelParts.RIGHT_SLEEVE) else enabledParts.remove(EnumPlayerModelParts.RIGHT_SLEEVE) }
+        leftPantsLeg.listeners.add { if (leftPantsLeg.value) enabledParts.add(EnumPlayerModelParts.LEFT_PANTS_LEG) else enabledParts.remove(EnumPlayerModelParts.LEFT_PANTS_LEG) }
+        rightPantsLeg.listeners.add { if (rightPantsLeg.value) enabledParts.add(EnumPlayerModelParts.RIGHT_PANTS_LEG) else enabledParts.remove(EnumPlayerModelParts.RIGHT_PANTS_LEG) }
+        hat.listeners.add { if (hat.value) enabledParts.add(EnumPlayerModelParts.HAT) else enabledParts.remove(EnumPlayerModelParts.HAT) }
+    }
+
+    private enum class FlickerMode(override val displayName: CharSequence) : DisplayEnum {
+        HORIZONTAL("Horizontal"),
+        VERTICAL("Vertical"),
+        RANDOM("Random")
+    }
+}

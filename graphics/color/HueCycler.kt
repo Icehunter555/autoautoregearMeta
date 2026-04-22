@@ -1,0 +1,50 @@
+package dev.wizard.meta.graphics.color
+
+import java.awt.Color
+
+class HueCycler(val cycles: Int) {
+    private val hueMultiplier = 1.0f / cycles
+    private val colorCycle: Array<Int> = Array(cycles) { i ->
+        Color.HSBtoRGB(i * hueMultiplier, 1.0f, 1.0f)
+    }
+    private var index = 0
+
+    init {
+        require(cycles > 0) { "cycles <= 0" }
+    }
+
+    fun reset() {
+        set(0)
+    }
+
+    fun set(indexIn: Int) {
+        index = indexIn
+    }
+
+    fun currentHex(): Int {
+        return colorCycle[index]
+    }
+
+    fun currentRgb(): ColorRGB {
+        return ColorRGB(currentHex())
+    }
+
+    fun currentRgba(alpha: Int): ColorRGB {
+        return currentRgb().alpha(alpha)
+    }
+
+    operator fun plus(plus: Int) {
+        index += plus
+        if (index >= cycles) {
+            index = 0
+        }
+    }
+
+    operator fun inc(): HueCycler {
+        index++
+        if (index >= cycles) {
+            index = 0
+        }
+        return this
+    }
+}

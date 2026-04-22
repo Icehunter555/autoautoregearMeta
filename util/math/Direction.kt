@@ -1,0 +1,53 @@
+package dev.wizard.meta.util.math
+
+import dev.wizard.meta.util.interfaces.DisplayEnum
+import net.minecraft.entity.Entity
+import net.minecraft.util.EnumFacing
+import net.minecraft.util.math.Vec3i
+import kotlin.math.roundToInt
+
+enum class Direction(
+    override val displayName: CharSequence,
+    val displayNameXY: String,
+    val directionVec: Vec3i,
+    val isDiagonal: Boolean
+) : DisplayEnum {
+    NORTH("North", "-Z", Vec3i(0, 0, -1), false),
+    NORTH_EAST("North East", "+X -Z", Vec3i(1, 0, -1), true),
+    EAST("East", "+X", Vec3i(1, 0, 0), false),
+    SOUTH_EAST("South East", "+X +Z", Vec3i(1, 0, 1), true),
+    SOUTH("South", "+Z", Vec3i(0, 0, 1), false),
+    SOUTH_WEST("South West", "-X +Z", Vec3i(-1, 0, 1), true),
+    WEST("West", "-X", Vec3i(-1, 0, 0), false),
+    NORTH_WEST("North West", "-X -Z", Vec3i(-1, 0, -1), true);
+
+    fun clockwise(n: Int = 1): Direction {
+        return entries[Math.floorMod(ordinal + n, 8)]
+    }
+
+    fun counterClockwise(n: Int = 1): Direction {
+        return entries[Math.floorMod(ordinal - n, 8)]
+    }
+
+    companion object {
+        fun fromEntity(entity: Entity?): Direction {
+            return entity?.let { fromYaw(it.rotationYaw) } ?: NORTH
+        }
+
+        fun fromYaw(yaw: Float): Direction {
+            val normalizedYaw = (RotationUtils.normalizeAngle(yaw.toDouble()) + 180.0).toFloat().coerceIn(0.0f, 360.0f)
+            val index = (normalizedYaw / 45.0f).roundToInt() % 8
+            return entries[index]
+        }
+
+        fun EnumFacing.toDirection(): Direction? {
+            return when (this) {
+                EnumFacing.NORTH -> NORTH
+                EnumFacing.EAST -> EAST
+                EnumFacing.SOUTH -> SOUTH
+                EnumFacing.WEST -> WEST
+                else -> null
+            }
+        }
+    }
+}
